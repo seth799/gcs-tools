@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eFuse vs Blade Fuse Explainer Lite · German Car Support</title>
+<style>
+:root{--bg:#161b24;--navy:#212a38;--card:#323f54;--edge:#4f6283;--gold:#D4AF37;--pale:#d6e1f0;--kick:#A9BEDC;--muted:#9AA9BC;
+  --red:#E8735F;--blue:#7FB5E6;--green:#7BD389;--amber:#F2C66D;--fs:clamp(13px,1.05vw,20px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:#fff;font-family:"Segoe UI",Roboto,Arial,sans-serif;font-size:var(--fs)}
+button{font:inherit;color:inherit}
+.app{display:grid;grid-template-rows:auto auto 1fr auto;height:100vh;min-height:660px}
+header{display:flex;align-items:center;gap:.8em;padding:.45em 1em;background:var(--navy);border-bottom:2px solid var(--edge);flex-wrap:wrap}
+.tag{font-size:.72em;letter-spacing:.14em;font-weight:800;color:var(--gold);text-transform:uppercase;border:1.5px solid var(--gold);padding:.15em .55em;border-radius:4px}
+h1{font-size:1.35em;margin:0;font-weight:800;color:var(--gold)}
+.sp{flex:1}
+.btn{background:var(--card);border:1.5px solid var(--edge);border-radius:8px;padding:.32em .75em;cursor:pointer;font-weight:700;white-space:nowrap}
+.btn:hover{border-color:var(--pale)}
+.btn.on{background:var(--pale);color:#1d2635;border-color:#fff}
+.modes{display:flex;gap:.35em;flex-wrap:wrap;padding:.45em 1em;background:#2f3b50;border-bottom:1.5px solid #3b4a62;align-items:center}
+.modes .btn.on{background:var(--gold);color:#1a1505;border-color:#fff}
+input[type=range]{accent-color:var(--gold);width:6em}
+main{display:grid;grid-template-columns:minmax(0,1.38fr) minmax(0,1fr);gap:.7em;padding:.7em;min-height:0}
+.col{display:grid;gap:.7em;min-height:0}
+.left{grid-template-rows:auto minmax(0,1.25fr) minmax(0,1fr)}
+.right{grid-template-rows:minmax(0,1.05fr) auto minmax(0,1fr)}
+.panel{background:var(--navy);border:1.5px solid var(--edge);border-radius:12px;padding:.5em .7em;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.ptitle{display:flex;gap:.6em;align-items:center;font-weight:800;color:var(--gold);font-size:.95em;margin-bottom:.25em;flex-wrap:wrap}
+.ptitle small{color:var(--muted);font-weight:600}
+.caption{background:#1f2938;border:1.5px solid var(--amber);border-radius:10px;padding:.4em .8em;font-size:1.12em;font-weight:800;display:flex;gap:.8em;align-items:center}
+.caption .num{background:var(--amber);color:#2a2000;border-radius:999px;padding:.05em .55em;font-size:.85em}
+.caption .rt{margin-left:auto;font-size:.75em;color:var(--kick);font-weight:700;white-space:nowrap}
+svg{width:100%;height:100%;display:block;flex:1;min-height:0}
+canvas{width:100%;flex:1;min-height:0;display:block;background:#101722;border-radius:8px;border:1.5px solid #18202c}
+.legend{font-size:.82em;font-weight:700;display:flex;gap:1em;flex-wrap:wrap}
+.readouts{display:grid;grid-template-columns:repeat(2,1fr);gap:.5em}
+.ro{background:#1f2938;border-radius:10px;padding:.35em .6em;border:1.5px solid #3b4a62}
+.ro h4{margin:0 0 .2em;font-size:.8em;color:var(--kick);letter-spacing:.06em;text-transform:uppercase}
+.ro .row{display:flex;justify-content:space-between;font-family:"DejaVu Sans Mono",Consolas,monospace;font-size:1.05em;font-weight:700}
+.ro .row span:first-child{font-family:Arial,sans-serif;color:var(--pale);font-weight:600;font-size:.88em}
+.pill{display:inline-block;padding:.05em .5em;border-radius:999px;font-weight:800;font-size:.85em}
+.tech{overflow:auto;font-size:.93em}
+.tech ul{margin:.15em 0 .4em;padding-left:1.2em}.tech li{margin:.18em 0;line-height:1.3}
+.tech .k{color:var(--kick);font-weight:800;font-size:.78em;letter-spacing:.08em;text-transform:uppercase}
+.tech .exp{background:#2d3a4f;border-left:4px solid var(--amber);padding:.35em .55em;border-radius:4px;margin:.3em 0}
+.hidden{display:none!important}
+.lockd{opacity:.5;filter:grayscale(.6);cursor:pointer}.lockd:hover{opacity:.75}
+.blk{position:relative;flex:1;min-height:0;cursor:pointer}
+.blk svg{filter:blur(3px);opacity:.45;position:absolute;inset:0}
+.blk .card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.35em;padding:.5em}
+.blk .card b{font-size:1.1em}.blk .card span{color:var(--pale);font-size:.88em;max-width:24em}
+.pill{display:inline-block;background:var(--gold);color:#1a1505;border-radius:999px;padding:.3em .9em;font-weight:800;text-decoration:none;border:0;cursor:pointer;font-size:.9em}
+footer{display:flex;align-items:center;gap:.5em .9em;flex-wrap:wrap;padding:.35em 1em;background:#10151d;border-top:2px solid var(--edge);font-size:.8em}
+footer .disc{color:var(--pale);font-weight:600;flex:1;min-width:14em}
+#gate{position:fixed;inset:0;background:rgba(10,14,20,.85);display:flex;align-items:center;justify-content:center;z-index:20;padding:1em}
+#gateBox{background:var(--navy);border:2px solid var(--gold);border-radius:14px;padding:1.1em 1.3em;max-width:28em;width:100%;text-align:center}
+#gateBox h2{margin:.2em 0;color:var(--gold);font-size:1.25em}
+#gateBox .feat{color:var(--amber);font-weight:800;font-size:.85em;text-transform:uppercase;letter-spacing:.05em}
+#gateBox p{color:var(--pale);line-height:1.4}
+#gateClose{background:none;border:0;color:var(--pale);margin-top:.7em;cursor:pointer;font-weight:700;text-decoration:underline}
+@media (max-width:1000px){main{grid-template-columns:minmax(0,1fr)}.col,.panel{min-width:0}.blk{min-height:30vh}.app{height:auto}.left,.right{grid-template-rows:auto}.left .panel,.right .panel{min-height:38vh}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <span class="tag">German Car Support · Free lite</span>
+  <h1>eFuse vs Blade Fuse</h1>
+  <span class="sp"></span>
+  <button class="btn" id="prev" title="Previous step (←)">◀ Prev</button>
+  <button class="btn" id="next" title="Next step (→)">Next ▶</button>
+  <button class="btn" id="play" title="Play / pause (Space)">❚❚ Pause</button>
+  <button class="btn" id="replay" title="Restart this mode (R)">↺ Replay</button>
+  <label>Speed <input type="range" id="speed" min="0.25" max="2" step="0.25" value="1"></label>
+  <button class="btn lockd" id="policy" data-lock="Retry vs latch-off policy switch" title="Members only">Policy 🔒</button>
+  <button class="btn on" id="expBtn" title="Explain (E)">Explain</button>
+</header>
+<div class="modes" id="modes"></div>
+<main>
+  <section class="col left">
+    <div class="caption" id="caption"></div>
+    <div class="panel"><div class="ptitle">Same circuit, two kinds of protection <small>Battery → protection → wire → load → ground</small></div>
+      <svg id="circ" viewBox="0 0 1200 430" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="panel"><div class="ptitle">Current &amp; voltage vs time <small id="tnote">Time slowed for demo – not to scale</small></div>
+      <div class="legend" id="legend"></div>
+      <canvas id="graph"></canvas></div>
+  </section>
+  <section class="col right">
+    <div class="panel"><div class="ptitle">Inside a generic eFuse <small>🔒 members only</small></div>
+      <div class="blk" data-lock="Inside the eFuse: block diagram, live" role="button" tabindex="0"><svg id="block" viewBox="0 0 760 450" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="card"><b>🔒 Inside the eFuse is members only</b><span>See the MOSFET, current sense, limit, thermal and fault logic light up live for every fault.</span><span class="pill">Unlock with GCS</span></div></div></div>
+    <div class="readouts">
+      <div class="ro"><h4>Blade fuse circuit</h4>
+        <div class="row"><span>Load voltage</span><span id="bV">--</span></div>
+        <div class="row"><span>Current</span><span id="bI">--</span></div>
+        <div class="row"><span>Fuse</span><span id="bS">--</span></div></div>
+      <div class="ro"><h4>eFuse circuit</h4>
+        <div class="row"><span>OUT voltage</span><span id="eV">--</span></div>
+        <div class="row"><span>Current</span><span id="eI">--</span></div>
+        <div class="row"><span>Die temp</span><span id="eT">--</span></div>
+        <div class="row"><span>FAULT pin</span><span id="eF">--</span></div></div>
+    </div>
+    <div class="panel"><div class="ptitle">What the tech sees</div><div class="tech" id="tech"></div></div>
+  </section>
+</main>
+<footer><span class="disc">Generic eFuse teaching model. Time is slowed for the demo and values are typical, not from any one vehicle or part. Always check the service information for the module you're working on.</span>
+<a class="pill" href="https://germancarsupport.com/support-plans" target="_top" data-top>See Support Plans</a></footer>
+</div>
+<div id="gate" class="hidden" role="dialog" aria-modal="true"><div id="gateBox">
+ <div style="font-size:2em">🔒</div><h2>Members only</h2><div class="feat" id="gateFeat"></div>
+ <p>This is part of the full GCS eFuse explainer: thermal shutdown, retry vs latch-off, open-load detection and the live inside-the-eFuse view. It's included with a GCS membership.</p>
+ <a class="pill" href="https://germancarsupport.com/support-plans" target="_top" data-top>See Support Plans</a><br>
+ <button id="gateClose">Keep exploring the lite version</button>
+</div></div>
+<script>
+"use strict";
+const VB=12.6, RLOAD=2.5, ILIM=15, IFAST=30;
+/* ---------- scenario model (demo seconds) ---------- */
+const MODES=[
+ {id:'normal',free:1,name:'Normal',end:6,steps:[[0,'Normal load: both circuits carry about 5 A','—']]},
+ {id:'overload',free:1,name:'Overload (current limit)',end:14,steps:[[0,'Normal load: 5 A','—'],[2,'Overload! Jammed motor wants ~22 A','real: steady overload'],[2.15,'eFuse clamps current at its 15 A limit – output voltage sags','real: µs to react'],[4,'Limit timer runs out → eFuse switches OFF and flags FAULT','real: ms'],[6.5,'Blade fuse finally blows – dead until replaced','real: ~seconds at 150 %'],[8,'eFuse retries… still overloaded → off again','real: retry delay ms–s','Latch-off: eFuse stays OFF until reset – no retry']]},
+ {id:'short',free:1,name:'Hard short',end:12,steps:[[0,'Normal load: 5 A','—'],[2,'Dead short to ground!','—'],[2.06,'eFuse fast-trips: switch OFF before current runs away','real: a few µs'],[2.5,'Blade fuse: huge current spike, then the element melts','real: ms'],[5,'eFuse retries into the short – off again. No damage, no smoke.','real: retry delay','Latch-off: eFuse stays OFF until reset. No damage, no smoke.']]},
+ {id:'thermal',name:'Thermal shutdown'},
+ {id:'retry',name:'Retry vs latch-off'},
+ {id:'open',name:'Open load detection'}];
+const TECH={
+ normal:{s:['Load works. eFuse OUT ≈ battery voltage, current ≈ load current.','No fault stored.'],t:'Learn normal current for each output – many systems report it live in the scan tool.'},
+ overload:{s:['No blown fuse to find – the eFuse turns the output off.','Module stores an overcurrent / output fault for that channel.','OUT voltage: sags in limit, then 0 V, or cycles on/off during retries.'],t:'Check what the load is doing: seized motor, binding mechanism, wrong part. Load test the circuit and compare current to spec.'},
+ short:{s:['Output shut off (0 V), maybe pulsing during retries.','Fault code: short to ground / overcurrent on that output.','Nothing melted – the wiring short is still there.'],t:'With the output OFF (key off / channel disabled), measure Ω from the circuit to ground. Unplug sections until the short goes away. Then clear the fault.'},};
+const GENERAL=['There is <b>no fuse to replace</b> – the module protects the circuit and reports it.','<b>Read the fault code</b> first: it names the output and the type (short, overload, open, thermal).','<b>Check for a short with the output OFF</b>: Ω to ground with the channel disabled / key off.','<b>Load test</b> the circuit (test lamp / load tool) – a DMM alone can lie on an open or high-resistance circuit.','<b>Reset</b> after the repair: scan tool reset or power cycle.'];
+let policy='retry';
+function sim(mode,t,pol){ pol=pol||policy;
+  // returns state for blade (b) and eFuse (e)
+  const o={bI:VB/RLOAD,bBlown:false,bV:VB-0.05,eI:VB/RLOAD,eV:VB-0.05,eOn:true,eState:'on',temp:55,flt:false,load:'ok',short:false,lim:false};
+  if(mode==='normal')return o;
+  if(t<2)return o;
+  const dt=t-2;
+  if(mode==='overload'){o.load='jam';const want=22;
+    o.bBlown=t>=6.5; o.bI=o.bBlown?0:want; o.bV=o.bBlown?0:want*VB/(want+0.3)*0.98;
+    // eFuse: limit 2s, off, retry every 4s for 2s if retry policy
+    let on,ph;
+    if(dt<2){on=true;ph=dt;} else if(pol==='retry'&&dt>=6&&(dt-6)%4<1.2){on=true;ph=(dt-6)%4;} else {on=false;ph=0;}
+    if(on){o.eI=ph<0.15?want-(want-ILIM)*ph/0.15:ILIM;o.eV=o.eI*(VB/want);o.lim=true;o.eState='limit';o.flt=false;o.temp=55+45*ph;}
+    else{o.eI=0;o.eV=0;o.eOn=false;o.eState=pol==='retry'?'wait':'latched';o.flt=true;o.temp=60;}
+    return o;}
+  if(mode==='short'||mode==='retry'){o.short=true;o.load='short';
+    o.bBlown=t>=2.5; o.bI=o.bBlown?0:(dt<0.04?5+175*dt/0.04:180); o.bV=0;
+    let on; const pulse=0.06;
+    if(dt<pulse)on=true; else if(pol==='retry'){on=dt>=3&&((dt-3)%3<pulse);} else on=false;
+    if(on){const ph=dt<pulse?dt:(dt-3)%3;o.eI=Math.min(IFAST,5+(IFAST-5)*ph/0.03);o.eV=0.3;o.eState='trip';o.flt=false;}
+    else{o.eI=0;o.eV=0;o.eOn=false;o.eState=pol==='retry'?'wait':'latched';o.flt=true;}
+    o.temp=60+(on?20:Math.max(0,20-dt*4));
+    return o;}
+  return o;}
+
+/* ---------- UI build ---------- */
+const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
+function el(tag,a,p,txt){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;p.appendChild(e);return e;}
+let mode='overload', t=0, playing=true, speed=1, showExp=true;
+const FREEM=MODES.filter(m=>m.free);
+MODES.forEach(M=>{const b=document.createElement('button');b.className='btn'+(M.free?'':' lockd');b.textContent=M.name+(M.free?'':' 🔒');
+  if(M.free){b.dataset.m=M.id;b.onclick=()=>{setMode(M.id);};}else b.dataset.lock=M.name;$('modes').appendChild(b);});
+let gRet=null;
+function gate(f){gRet=document.activeElement;$('gateFeat').textContent=f;$('gate').classList.remove('hidden');$('gateClose').focus();}
+function ungate(){$('gate').classList.add('hidden');if(gRet&&gRet.focus)gRet.focus();}
+$('gateClose').onclick=ungate;$('gate').addEventListener('click',e=>{if(e.target.id==='gate')ungate();});
+document.addEventListener('click',e=>{const a=e.target.closest('a[data-top]');if(a){e.preventDefault();try{window.top.location.href=a.href;}catch(x){window.open(a.href,'_blank','noopener');}return;}
+  const l=e.target.closest('[data-lock]');if(l){e.preventDefault();e.stopPropagation();gate(l.dataset.lock);}},true);
+function M(){return MODES.find(m=>m.id===mode);}
+function setMode(id){if(!FREEM.some(m=>m.id===id))return;mode=id;t=0;playing=true;sync();}
+function sync(){document.querySelectorAll('#modes .btn').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
+  $('play').textContent=playing?'❚❚ Pause':'▶ Play';
+  $('expBtn').classList.toggle('on',showExp);
+  const lg=[['#F2C66D','━ Blade fuse current'],['#7FB5E6','━ eFuse current'],['#7BD389','┅ eFuse OUT voltage']];
+  if(mode==='retry')lg.splice(1,2,['#7FB5E6','━ eFuse auto-retry current'],['#E8735F','━ eFuse latch-off current']);
+  if(mode==='thermal')lg.push(['#E8735F','┅ die temperature']);
+  $('legend').innerHTML=lg.map(([c,n])=>`<span style="color:${c}">${n}</span>`).join('');
+  renderTech();}
+/* circuits */
+const C=$('circ');
+function drawCirc(s){C.innerHTML='';
+  const defs=el('defs',{},C);const f=el('filter',{id:'gl',x:'-50%',y:'-50%',width:'200%',height:'200%'},defs);el('feGaussianBlur',{stdDeviation:5,result:'b'},f);const mg=el('feMerge',{},f);el('feMergeNode',{in:'b'},mg);el('feMergeNode',{in:'SourceGraphic'},mg);
+  [0,600].forEach((ox,side)=>{
+    const g=el('g',{transform:`translate(${ox},0)`},C), blade=side===0;
+    el('rect',{x:10,y:8,width:580,height:414,rx:16,fill:'#33415a',stroke:'#4f6283','stroke-width':2},g);
+    el('text',{x:300,y:44,'text-anchor':'middle',fill:blade?'#F2C66D':'#7FB5E6','font-size':28,'font-weight':800},g,blade?'Blade fuse':'eFuse');
+    // path coords: battery (60,130-250) top wire y=110 → protection at x=200 → to load at x=470 → down to y=330 ground
+    const I=blade?s.bI:s.eI, live=blade?!s.bBlown&&I>0.05:s.eOn&&I>0.05, V=blade?s.bV:s.eV;
+    const hot=Math.min(1,I/30), wcol=live?`rgb(${Math.round(207+48*hot)},${Math.round(220-120*hot)},${Math.round(239-170*hot)})`:'#7b8799';
+    // battery
+    el('rect',{x:40,y:150,width:80,height:130,rx:10,fill:'#232c3b',stroke:'#A9BEDC','stroke-width':3},g);
+    el('text',{x:80,y:225,'text-anchor':'middle',fill:'#fff','font-size':24,'font-weight':800},g,'12 V');
+    el('text',{x:80,y:142,'text-anchor':'middle',fill:'#E8735F','font-size':26,'font-weight':900},g,'+');
+    // wires
+    const wire=(d,c)=>el('path',{d,fill:'none',stroke:c,'stroke-width':8,'stroke-linecap':'round','stroke-linejoin':'round'},g);
+    wire('M80,150 V100 H200',wcol); wire('M300,100 H470 V180',wcol);
+    wire('M470,280 V360 H80 V280','#CFDCEF');
+    // ground symbol
+    [40,28,16].forEach((w,k)=>el('line',{x1:280-w/2,y1:372+k*9,x2:280+w/2,y2:372+k*9,stroke:'#CFDCEF','stroke-width':4},g));
+    el('line',{x1:280,y1:360,x2:280,y2:372,stroke:'#CFDCEF','stroke-width':4},g);
+    // protection element
+    if(blade){
+      el('rect',{x:200,y:72,width:100,height:56,rx:10,fill:s.bBlown?'#5b2f2a':`rgba(242,198,109,${0.3+0.6*hot})`,stroke:'#F2C66D','stroke-width':3,filter:hot>.5&&!s.bBlown?'url(#gl)':''},g);
+      if(s.bBlown){el('path',{d:'M215,100 h25 l8,-10 M262,110 l8,-10 h15',fill:'none',stroke:'#2b1a17','stroke-width':6},g);
+        el('text',{x:250,y:160,'text-anchor':'middle',fill:'#E8735F','font-size':22,'font-weight':900},g,'BLOWN – replace');}
+      else{el('path',{d:'M212,100 h76',stroke:'#3a2c08','stroke-width':6},g);el('text',{x:250,y:160,'text-anchor':'middle',fill:'#CFDCEF','font-size':19,'font-weight':700},g,'15 A fuse');}
+    } else {
+      const fc=s.flt?'#E8735F':'#7BD389';
+      el('rect',{x:195,y:62,width:110,height:76,rx:10,fill:'#1c2433',stroke:s.eState==='limit'?'#F2C66D':'#7FB5E6','stroke-width':4},g);
+      el('text',{x:250,y:96,'text-anchor':'middle',fill:'#fff','font-size':20,'font-weight':800},g,'eFuse');
+      el('circle',{cx:250,cy:118,r:9,fill:fc,filter:'url(#gl)'},g);
+      el('text',{x:250,y:168,'text-anchor':'middle',fill:s.flt?'#E8735F':'#CFDCEF','font-size':19,'font-weight':800},g,
+        s.flt?({open:'FAULT: open load',thermal:'FAULT: over-temp',latched:'FAULT: latched OFF',wait:'FAULT: off, will retry'}[s.eState]||'FAULT'):s.eState==='limit'?'LIMITING 15 A':s.eState==='trip'?'TRIPPING…':'ON');
+      el('text',{x:250,y:196,'text-anchor':'middle',fill:s.flt?'#E8735F':'#A9BEDC','font-size':16,'font-weight':700},g,s.flt?'⇢ fault reported to module':'⇢ status to module');
+    }
+    // load
+    const lc=s.load==='open'?'#7b8799':live?'#F2C66D':'#7b8799';
+    if(s.load==='open'){el('line',{x1:470,y1:180,x2:470,y2:198,stroke:wcol,'stroke-width':8},g);
+      el('text',{x:470,y:216,'text-anchor':'middle',fill:'#F2C66D','font-size':22,'font-weight':900},g,'✕ open');}
+    el('circle',{cx:470,cy:230,r:46,fill:'#232c3b',stroke:lc,'stroke-width':5,filter:live&&s.load!=='open'?'url(#gl)':''},g);
+    el('text',{x:470,y:242,'text-anchor':'middle',fill:'#fff','font-size':34,'font-weight':900},g,'M');
+    el('text',{x:532,y:236,fill:'#CFDCEF','font-size':16,'font-weight':700},g,{ok:'load',jam:'jammed',heavy:'heavy',short:'load',open:'load'}[s.load]);
+    if(s.load==='jam')el('text',{x:470,y:300,'text-anchor':'middle',fill:'#F2C66D','font-size':17,'font-weight':800},g,'stalled → 22 A');
+    // short
+    if(s.short){let d='M400,100';for(let k=1;k<=6;k++)d+=` L${400+(k%2?16:-16)},${100+(360-100)*k/6}`;el('path',{d,fill:'none',stroke:'#F2C66D','stroke-width':5,filter:'url(#gl)'},g);
+      el('text',{x:330,y:300,fill:'#F2C66D','font-size':19,'font-weight':900},g,'SHORT');}
+    // current dots
+    if(live){const L=[[80,150],[80,100],[200,100]],R=[[300,100],[s.short?400:470,100],[s.short?400:470,s.short?360:180]];
+      const ph=(perf*(0.25+I/8))%1;
+      const along=(pts,u)=>{let segs=[],tot=0;for(let k=1;k<pts.length;k++){const l=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);segs.push(l);tot+=l;}let d=u*tot;for(let k=0;k<segs.length;k++){if(d<=segs[k]){const r=d/segs[k];return [pts[k][0]+(pts[k+1][0]-pts[k][0])*r,pts[k][1]+(pts[k+1][1]-pts[k][1])*r];}d-=segs[k];}return pts[pts.length-1];};
+      for(let k=0;k<6;k++){const u=(k/6+ph)%1;[L,R].forEach(P=>{const [x,y]=along(P,u);el('circle',{cx:x,cy:y,r:7,fill:'#fff',opacity:.9},g);});}}
+    // readout chip
+    el('text',{x:300,y:410,'text-anchor':'middle',fill:'#CFDCEF','font-size':20,'font-weight':800},g,`${I.toFixed(1)} A  ·  ${V.toFixed(1)} V at load`);
+  });}
+/* block diagram */
+const B=$('block');
+function drawBlock(s){B.innerHTML='';
+  const act={mos:s.eOn,sense:true,lim:s.eState==='limit'||s.eState==='trip',therm:s.eState==='thermal'||s.temp>140,logic:true,flt:s.flt,open:s.eState==='open'};
+  const box=(x,y,w,h,label,sub,on,col)=>{el('rect',{x,y,width:w,height:h,rx:10,fill:on?'#2c3b52':'#253042',stroke:on?(col||'#7FB5E6'):'#55657e','stroke-width':on?4:2},B);
+    el('text',{x:x+w/2,y:y+h/2+(sub?-2:7),'text-anchor':'middle',fill:'#fff','font-size':19,'font-weight':800},B,label);
+    if(sub)el('text',{x:x+w/2,y:y+h/2+20,'text-anchor':'middle',fill:'#A9BEDC','font-size':14},B,sub);};
+  const pin=(x,y,l,ly,col)=>{el('rect',{x:x-14,y:y-14,width:28,height:28,fill:col||'#CFDCEF',rx:4},B);el('text',{x,y:ly,'text-anchor':'middle',fill:col||'#CFDCEF','font-size':18,'font-weight':800},B,l);};
+  const ln=(d,c,w,dash)=>el('path',{d,fill:'none',stroke:c||'#A9BEDC','stroke-width':w||4,'stroke-dasharray':dash||''},B);
+  el('rect',{x:70,y:20,width:620,height:340,rx:18,fill:'none',stroke:'#6E85A8','stroke-width':2,'stroke-dasharray':'10 8'},B);
+  // power path
+  const pc=s.eOn&&s.eI>0.05?'#F2C66D':'#7b8799';
+  pin(40,80,'IN',50); pin(720,80,'OUT',50);
+  ln('M54,80 H210',pc,6); ln('M330,80 H440',pc,6); ln('M560,80 H706',pc,6);
+  box(210,45,120,70,'MOSFET','power switch',act.mos,s.eOn?'#7BD389':'#E8735F');
+  box(440,45,120,70,'I-sense','current sense',act.sense);
+  box(90,170,170,70,'Gate driver','charge pump',act.mos);
+  box(300,170,190,70,'Control logic','timer · retry/latch',true,s.flt?'#E8735F':'#7FB5E6');
+  box(530,170,140,70,'Limit / trip','comparators',act.lim,'#F2C66D');
+  box(530,270,140,64,'Open-load','detect',act.open,'#E8735F');
+  box(300,270,190,64,'Thermal sensor',Math.round(s.temp)+' °C die',act.therm,'#E8735F');
+  ln('M175,170 V115 H230','#A9BEDC',3); ln('M300,205 H260','#A9BEDC',3); ln('M500,115 V140 H600 V170','#A9BEDC',3);
+  ln('M530,205 H490','#A9BEDC',3); ln('M395,270 V240','#A9BEDC',3); ln('M530,302 H510 V240 H490','#A9BEDC',3);
+  // pins bottom
+  ln('M160,386 V340 H330 V240','#7FB5E6',3); pin(160,400,'EN',440);
+  el('text',{x:160,y:370,'text-anchor':'middle',fill:'#7FB5E6','font-size':14,'font-weight':700},B,'');
+  ln('M600,386 V240','#F2C66D',3); pin(600,400,'ILIM (sets limit)',440,'#F2C66D');
+  ln('M400,386 V350 H440 V240',s.flt?'#E8735F':'#A9BEDC',3); pin(400,400,'FAULT / DIAG → module'+(s.flt?' ⚠':''),440,s.flt?'#E8735F':'#CFDCEF');
+}
+/* graph */
+const G=$('graph'), gx=G.getContext('2d');
+function drawGraph(){
+  const W=G.clientWidth,H=G.clientHeight,d=window.devicePixelRatio||1;
+  if(G.width!==Math.round(W*d)||G.height!==Math.round(H*d)){G.width=Math.round(W*d);G.height=Math.round(H*d);}
+  gx.setTransform(d,0,0,d,0,0);gx.clearRect(0,0,W,H);
+  const m=M(), pl=46,pr=46,pt=10,pb=22,pw=W-pl-pr,ph=H-pt-pb, IMAX=35, VMAX=15;
+  const X=tt=>pl+pw*tt/m.end, YI=i=>pt+ph*(1-Math.min(i,IMAX)/IMAX), YV=v=>pt+ph*(1-v/VMAX), YT=T=>pt+ph*(1-T/200);
+  gx.font='12px Arial';gx.strokeStyle='#26344a';gx.fillStyle='#9AA9BC';gx.lineWidth=1;
+  for(let i=0;i<=35;i+=5){const y=YI(i);gx.beginPath();gx.moveTo(pl,y);gx.lineTo(pl+pw,y);gx.stroke();if(i%10===0)gx.fillText(i+' A',6,y+4);}
+  for(let v=0;v<=15;v+=5){gx.fillStyle='#7BD389';gx.fillText(v+' V',pl+pw+6,YV(v)+4);}
+  gx.fillStyle='#9AA9BC';gx.fillText('demo time →',pl+pw-80,H-6);
+  // limit line
+  gx.strokeStyle='#F2C66D55';gx.setLineDash([6,6]);gx.beginPath();gx.moveTo(pl,YI(ILIM));gx.lineTo(pl+pw,YI(ILIM));gx.stroke();gx.setLineDash([]);
+  gx.fillStyle='#F2C66D';gx.fillText('eFuse limit 15 A',pl+6,YI(ILIM)-5);
+  // step markers
+  m.steps.forEach(([st],k)=>{if(st>0){gx.strokeStyle='#ffffff22';gx.beginPath();gx.moveTo(X(st),pt);gx.lineTo(X(st),pt+ph);gx.stroke();gx.fillStyle='#A9BEDC';gx.fillText(String(k+1),X(st)+3,pt+12);}});
+  const N=Math.max(2,Math.floor(pw)), tr=(fn,Y,col,dash,w)=>{gx.strokeStyle=col;gx.lineWidth=w||2.6;gx.setLineDash(dash||[]);gx.beginPath();let first=true;
+    for(let k=0;k<=N;k++){const tt=m.end*k/N;if(tt>t)break;const y=Y(fn(tt));first?gx.moveTo(X(tt),y):gx.lineTo(X(tt),y);first=false;}gx.stroke();gx.setLineDash([]);};
+  // fine sampling around fast events
+  tr(tt=>sim(mode,tt).bI,YI,'#F2C66D');
+  if(mode==='retry'){tr(tt=>sim(mode,tt,'retry').eI,YI,'#7FB5E6',null,3);tr(tt=>sim(mode,tt,'latch').eI,YI,'#E8735F',[2,0],2.2);}
+  else{tr(tt=>sim(mode,tt).eI,YI,'#7FB5E6',null,3);tr(tt=>sim(mode,tt).eV,YV,'#7BD389',[7,5],2.2);}
+  if(mode==='thermal'){tr(tt=>sim(mode,tt).temp,YT,'#E8735F',[3,4],2);gx.fillStyle='#E8735F';gx.fillText('shutdown ≈170 °C',X(4)+4,YT(176));}
+  if((mode==='short'||mode==='retry')&&t>2){gx.fillStyle='#F2C66D';gx.font='bold 13px Arial';gx.fillText('↑ blade fuse spike: 100s of A (off scale)',X(2)+8,pt+28);}
+  // cursor
+  gx.strokeStyle='#fff';gx.lineWidth=1.5;gx.beginPath();gx.moveTo(X(t),pt);gx.lineTo(X(t),pt+ph);gx.stroke();
+}
+/* readouts + text */
+function readouts(s){
+  $('bV').textContent=s.bV.toFixed(1)+' V';$('bI').textContent=s.bI.toFixed(1)+' A';
+  $('bS').innerHTML=s.bBlown?'<span class="pill" style="background:#E8735F">BLOWN</span>':'<span class="pill" style="background:#7BD389;color:#10301c">OK</span>';
+  $('eV').textContent=s.eV.toFixed(1)+' V';$('eI').textContent=s.eI.toFixed(1)+' A';$('eT').textContent=Math.round(s.temp)+' °C';
+  $('eF').innerHTML=s.flt?'<span class="pill" style="background:#E8735F">FAULT</span>':'<span class="pill" style="background:#7BD389;color:#10301c">OK</span>';}
+function curStep(){const st=M().steps;let k=0;st.forEach((s,i)=>{if(t>=s[0])k=i;});return k;}
+function caption(){const st=M().steps,k=curStep();$('caption').innerHTML=`<span class="num">${k+1}/${st.length}</span><span>${policy==='latch'&&st[k][3]?st[k][3]:st[k][1]}</span><span class="rt">${st[k][2]!=='—'&&!(policy==='latch'&&st[k][3])?st[k][2]:''}</span>`;}
+function renderTech(){const T=TECH[mode];
+  $('tech').innerHTML=`<span class="k">This mode</span><ul>${T.s.map(x=>`<li>${x}</li>`).join('')}</ul>
+   <div class="exp ${showExp?'':'hidden'}"><b>Explain:</b> ${T.t}</div>
+   <span class="k">How to test any eFuse circuit</span><ul>${GENERAL.map(x=>`<li>${x}</li>`).join('')}</ul>`;}
+/* controls */
+$('play').onclick=()=>{if(t>=M().end){t=0;}playing=!playing;sync();};
+$('replay').onclick=()=>{t=0;playing=true;sync();};
+$('speed').oninput=e=>speed=+e.target.value;
+$('expBtn').onclick=()=>{showExp=!showExp;sync();};
+const MIDX=()=>FREEM.findIndex(m=>m.id===mode);
+$('next').onclick=()=>{const st=M().steps,k=curStep();if(k<st.length-1&&t<st[k+1][0]){t=st[k+1][0]+0.001;playing=false;}else{const nm=FREEM[(MIDX()+1)%FREEM.length];mode=nm.id;t=0;playing=false;}sync();};
+$('prev').onclick=()=>{const st=M().steps,k=curStep();if(t>st[k][0]+0.3||k===0&&t>0){t=st[k][0]+(k?0.001:0);}else if(k>0){t=st[k-1][0]+(k-1?0.001:0);}else{const pm=FREEM[(MIDX()+FREEM.length-1)%FREEM.length];mode=pm.id;const s=pm.steps;t=s[s.length-1][0]+0.001;}playing=false;sync();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){ungate();return;}if(!$('gate').classList.contains('hidden'))return;if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')$('next').click();else if(e.key==='ArrowLeft')$('prev').click();else if(e.key===' '){e.preventDefault();$('play').click();}else if(e.key==='r'||e.key==='R')$('replay').click();else if(e.key==='e'||e.key==='E')$('expBtn').click();});
+let last=performance.now(), perf=0;
+function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;perf+=dt*speed;
+  if(playing){/* slow down around fast events so they are visible */
+    const fast=(mode==='short'||mode==='retry')&&t>1.95&&t<2.2;t+=dt*speed*(fast?0.18:1);if(t>=M().end){t=M().end;playing=false;$('play').textContent='▶ Play';}}
+  const s=sim(mode,t);drawCirc(s);drawBlock(s);readouts(s);caption();drawGraph();requestAnimationFrame(loop);}
+setMode('normal');requestAnimationFrame(loop);window.addEventListener('resize',drawGraph);
+</script>
+</body>
+</html>

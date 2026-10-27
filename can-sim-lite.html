@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAN Bus Fault Simulator Lite · German Car Support</title>
+<style>
+:root{
+  --bg:#161b24; --navy:#212a38; --card:#323f54; --edge:#4f6283; --gold:#D4AF37; --pale:#CFDCEF; --kick:#A9BEDC;
+  --muted:#9AA9BC; --white:#fff; --red:#E8735F; --blue:#7FB5E6; --green:#7BD389; --amber:#F2C66D;
+  --canh:#7FB5E6; --canl:#E8735F;
+  --fs:clamp(13px,1.05vw,20px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--white);
+  font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:var(--fs)}
+button,select{font:inherit;color:inherit}
+.app{display:grid;grid-template-rows:auto 1fr auto;height:100vh;min-height:660px}
+header{display:flex;align-items:center;gap:1em;padding:.45em 1em;background:var(--navy);border-bottom:2px solid var(--edge);flex-wrap:wrap}
+.tag{font-size:.72em;letter-spacing:.14em;font-weight:800;color:var(--gold);text-transform:uppercase;border:1.5px solid var(--gold);padding:.15em .55em;border-radius:4px}
+h1{font-size:1.35em;margin:0;font-weight:800;letter-spacing:.01em;color:var(--gold)}
+.sp{flex:1}
+.btn{background:var(--card);border:1.5px solid var(--edge);border-radius:8px;padding:.35em .8em;cursor:pointer;font-weight:700;white-space:nowrap}
+.btn:hover{border-color:var(--pale)}
+.btn.on{background:var(--pale);color:#1d2635;border-color:var(--white)}
+.btn.warn{background:#5a3b36;border-color:var(--red)}
+.btn.load.on{background:var(--amber);color:#2a2000;border-color:#fff}
+.key{display:flex;border:2px solid var(--edge);border-radius:999px;overflow:hidden}
+.key button{border:0;background:transparent;padding:.35em .9em;font-weight:800;cursor:pointer}
+.key button.on{background:var(--green);color:#10301c}
+.key button.off.on{background:var(--muted);color:#1d2635}
+select{background:var(--card);border:1.5px solid var(--edge);border-radius:8px;padding:.3em .5em}
+main{display:grid;grid-template-columns:1fr minmax(260px,24%);gap:.7em;padding:.7em;min-height:0}
+.left{display:grid;grid-template-rows:minmax(0,1.15fr) minmax(0,1fr);gap:.7em;min-height:0}
+.panel{background:var(--navy);border:1.5px solid var(--edge);border-radius:12px;padding:.55em .7em;min-height:0;display:flex;flex-direction:column}
+.ptitle{display:flex;align-items:center;gap:.6em;font-weight:800;color:var(--gold);font-size:.95em;margin-bottom:.3em;flex-wrap:wrap}
+.ptitle small{font-weight:600;color:var(--muted)}
+#topoWrap{flex:1;min-height:0;position:relative}
+#topo{width:100%;height:100%;display:block;touch-action:none;user-select:none}
+.bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:.7em;min-height:0}
+/* meter */
+.meter{display:grid;grid-template-columns:1fr;gap:.35em}
+.lcdRow{display:grid;grid-template-columns:1.3fr 1fr;gap:.5em}
+.lcd{background:#cfe0c8;color:#18240f;border-radius:8px;padding:.25em .5em;border:3px solid #18202c;font-family:"DejaVu Sans Mono",Consolas,monospace;text-align:right;position:relative}
+.lcd .lab{position:absolute;left:.45em;top:.25em;font-size:.62em;font-family:Manrope,Arial,sans-serif;font-weight:800;color:#3c5030;text-transform:uppercase;letter-spacing:.06em}
+.lcd .val{font-size:2.3em;font-weight:700;line-height:1.25;padding-top:.25em}
+.lcd.kg{background:#2f3d52;color:var(--pale);border-color:#18202c}
+.lcd.kg .lab{color:var(--muted)}
+.lcd.kg .val{font-size:1.7em;padding-top:.55em}
+.mrow{display:flex;gap:.4em;flex-wrap:wrap;align-items:center}
+.mrow .btn{padding:.25em .6em;font-size:.88em}
+.leads{font-size:.85em;color:var(--pale)}
+.leads b.r{color:#ff8f7c}
+#actR.on{color:#8a1d0f!important}.leads b.k{color:#e6edf6}
+.mwarn{min-height:1.4em;font-size:.86em;font-weight:700;color:var(--amber)}
+/* scope */
+#scopeWrap{flex:1;min-height:0;position:relative}
+#scope{width:100%;height:100%;display:block;background:#101722;border-radius:8px;border:1.5px solid #18202c}
+.legend{font-size:.82em;font-weight:700}
+.legend .h{color:var(--canh)}.legend .l{color:var(--canl)}.legend .d{color:var(--amber)}
+/* right */
+.right{display:grid;grid-template-rows:auto minmax(0,1fr);gap:.7em;min-height:0}
+#faults{display:flex;flex-direction:column;gap:.18em;overflow:auto;max-height:30vh}
+.fbtn{text-align:left;background:var(--card);border:1.5px solid transparent;border-radius:7px;padding:.2em .55em;cursor:pointer;font-weight:700;font-size:.88em}
+.fbtn:hover{border-color:var(--edge)}
+.fbtn.on{background:var(--gold);color:#1a1505;border-color:#fff}
+.fbtn .n{display:inline-block;width:1.6em;color:var(--kick)}
+.fbtn.on .n{color:#1a1505}
+#explain{overflow:auto}
+#explain h3{margin:.1em 0 .35em;font-size:1.1em;color:var(--white)}
+#explain p{margin:.25em 0 .45em;line-height:1.35}
+#explain .k{color:var(--kick);font-weight:800;font-size:.78em;letter-spacing:.08em;text-transform:uppercase;display:block;margin-top:.35em}
+#explain .tip{background:#2d3a4f;border-left:4px solid var(--amber);padding:.35em .55em;border-radius:4px}
+#explain .teach{background:#4a2f2b;border-left:4px solid var(--red);padding:.35em .55em;border-radius:4px;font-weight:700}
+.hidden{display:none!important}
+.disc{font-size:.78em;color:var(--pale);font-weight:600}
+.btn.myst{border-color:var(--gold);color:var(--gold)}
+.btn.myst.on{background:var(--gold);color:#1a1505}
+#diag{overflow:auto;min-height:0;flex:1}
+#explain{flex:1;min-height:0}
+#diag h3{margin:.1em 0 .3em;font-size:1.1em;color:var(--gold)}
+#diag p{margin:.2em 0 .45em;line-height:1.35}
+#diag label{display:flex;gap:.45em;align-items:flex-start;padding:.28em .45em;border-radius:6px;background:var(--card);margin:.2em 0;cursor:pointer;font-weight:700;font-size:.92em}
+#diag input{accent-color:var(--gold);margin-top:.2em}
+#diag .res{border-radius:6px;padding:.4em .55em;margin-top:.45em;line-height:1.35}
+#diag .res.ok{background:#1f3b29;border-left:4px solid var(--green)}
+#diag .res.no{background:#43271f;border-left:4px solid var(--red)}
+#diag .acts{display:flex;gap:.4em;flex-wrap:wrap;margin-top:.45em}
+.ctrl{display:flex;align-items:center;gap:.45em;flex-wrap:wrap}
+input[type=range]{accent-color:var(--red);width:6em}
+
+/* ---- lite / locked ---- */
+.lockd{opacity:.5;filter:grayscale(.6);position:relative}
+.lockd:hover{opacity:.72}
+.btn.lockd,.fbtn.lockd{cursor:pointer}
+.lk{font-size:.85em;margin-left:.35em}
+.fbtn.free .n{color:var(--green)}
+.fhead{font-size:.72em;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin:.35em 0 .1em}
+.fhead.f{color:var(--green)}
+#scopeLock{flex:1;min-height:0;position:relative;border-radius:8px;border:1.5px solid #18202c;background:#101722;overflow:hidden;cursor:pointer}
+#scopeLock svg{position:absolute;inset:0;width:100%;height:100%;filter:blur(3px);opacity:.55}
+#scopeLock .card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.35em;padding:.5em}
+#scopeLock .card b{font-size:1.15em}
+#scopeLock .card span{color:var(--pale);font-size:.88em;max-width:28em}
+.pill{display:inline-block;background:var(--gold);color:#1a1505;border-radius:999px;padding:.3em .9em;font-weight:800;text-decoration:none;border:0;cursor:pointer;font-size:.9em}
+.pill.ghost{background:transparent;border:1.5px solid var(--pale);color:var(--pale)}
+.liteBar{display:flex;align-items:center;gap:.8em;flex-wrap:wrap;padding:.4em 1em;background:#1b2331;border-top:2px solid var(--edge);font-size:.85em;font-weight:700}
+.liteBar .lt{color:var(--amber);letter-spacing:.06em;text-transform:uppercase;font-size:.85em}
+.liteBar a{color:var(--white)}
+.liteBar a.pill{color:#1a1505}
+#gate{position:fixed;inset:0;background:rgba(14,20,30,.82);display:flex;align-items:center;justify-content:center;z-index:20;padding:1em}
+#gateBox{background:var(--navy);border:2px solid var(--edge);border-radius:14px;padding:1.2em 1.4em;max-width:30em;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#gateBox .big{font-size:2.2em;line-height:1}
+#gateBox h2{margin:.3em 0 .2em;font-size:1.3em}
+#gateBox .feat{color:var(--amber);font-weight:800;font-size:.85em;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5em}
+#gateBox p{color:var(--pale);line-height:1.4;margin:.3em 0 1em}
+#gateBox .acts{display:flex;gap:.6em;justify-content:center;flex-wrap:wrap}
+#gateBox .acts a{font-size:1em;padding:.5em 1.2em}
+#gateClose{background:none;border:0;color:var(--muted);margin-top:.8em;cursor:pointer;font-weight:700;text-decoration:underline}
+@media (max-width:1000px){
+  main{grid-template-columns:minmax(0,1fr)}
+  .left,.right,.panel,.bottom{min-width:0}
+  #topoWrap{max-width:100%}
+  .left{grid-template-rows:auto auto}
+  #topoWrap{height:42vh}
+  .bottom{grid-template-columns:1fr}
+  #scopeLock{height:26vh;flex:none}
+  #faults{max-height:none}
+  .app{height:auto}
+  header{gap:.5em}
+  h1{font-size:1.15em}
+}
+@media (max-width:560px){
+  :root{--fs:14px}
+  #topoWrap{height:auto;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #topo{width:760px;height:247px;touch-action:pan-x}
+  #topoWrap::after{content:'◀ swipe the diagram ▶';display:block;text-align:center;font-size:.75em;color:var(--pale)}
+  header .ctrl label{display:none}
+  .lcd .val{font-size:1.8em}
+  .liteBar{font-size:.8em}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <span class="tag">German Car Support · Free lite</span>
+  <h1>CAN Bus Fault Simulator</h1>
+  <div class="key" title="Key switch (K)">
+    <button id="keyOn" class="on">KEY ON</button><button id="keyOff" class="off">KEY OFF</button>
+  </div>
+  <button class="btn load lockd" data-lock="Drive load / intermittent faults" title="Members only">⚙ Shift into gear / load<span class="lk">🔒</span></button>
+  <span class="sp"></span>
+  <div class="ctrl">
+    <button class="btn" id="prev" title="Previous free fault (←)">◀ Prev</button>
+    <button class="btn" id="next" title="Next free fault (→)">Next ▶</button>
+    <button class="btn" id="play" title="Play / pause animation (Space)">❚❚ Pause</button>
+    <label>Speed <input type="range" id="speed" min="0.25" max="2" step="0.25" value="1"></label>
+    <button class="btn myst" id="mystBtn" title="Mystery car: diagnose a hidden free fault">🎯 Mystery car</button>
+    <button class="btn lockd" data-lock="Quiz mode (all 13 faults, scored)" title="Members only">🎲 Quiz<span class="lk">🔒</span></button>
+    <button class="btn lockd" data-lock="Arbitration trainer" title="Members only">Arbitration<span class="lk">🔒</span></button>
+    <button class="btn on" id="expBtn" title="Show / hide explanation panel (E)">Explain</button>
+  </div>
+</header>
+<main>
+  <section class="left">
+    <div class="panel">
+      <div class="ptitle">Bus topology <small>Drag the red / black leads onto any test point (or tap a point) · Module unplug 🔒 members</small></div>
+      <div id="topoWrap"><svg id="topo" viewBox="0 0 1600 520" preserveAspectRatio="xMidYMid meet"></svg></div>
+    </div>
+    <div class="bottom">
+      <div class="panel meter">
+        <div class="ptitle">Multimeter <small>DMM = time-averaged reading</small></div>
+        <div class="mrow">
+          <button class="btn on" id="modeV">V DC</button><button class="btn" id="modeR">Ω</button>
+          <span style="width:.6em"></span>
+          <span class="leads">Place: <button class="btn on" id="actR" style="color:#ff8f7c">Red lead</button> <button class="btn" id="actK">Black lead</button></span>
+        </div>
+        <div class="lcdRow">
+          <div class="lcd"><span class="lab">Live reading</span><div class="val" id="mval">--</div></div>
+          <div class="lcd kg"><span class="lab">Known good (typical)</span><div class="val" id="mkg">--</div></div>
+        </div>
+        <div class="leads" id="leadTxt"></div>
+        <div class="mwarn" id="mwarn"></div>
+        <div class="mrow" style="font-size:.95em"><span style="color:var(--muted);font-weight:700;font-size:.85em">Quick probes @ DLC:</span>
+          <button class="btn" data-p="HG">H→GND V</button><button class="btn" data-p="LG">L→GND V</button>
+          <button class="btn" data-p="HL">H→L V</button><button class="btn" data-p="HLR">H↔L Ω</button>
+        </div>
+      </div>
+      <div class="panel" id="scopePanel">
+        <div class="ptitle">Oscilloscope <small>🔒 members only</small>
+          <span class="sp"></span>
+          <button class="btn lockd" data-lock="Oscilloscope (probe any module, H−L diff)" style="font-size:.8em;padding:.2em .5em">Probe at… 🔒</button>
+          <button class="btn lockd" data-lock="Oscilloscope (probe any module, H−L diff)" style="font-size:.8em;padding:.2em .5em">H−L 🔒</button>
+        </div>
+        <div id="scopeLock" data-lock="Oscilloscope (probe any module, H−L diff)" role="button" tabindex="0" aria-label="Oscilloscope - members only">
+          <svg viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+            <polyline fill="none" stroke="#7FB5E6" stroke-width="3" points="0,60 40,60 40,35 90,35 90,60 120,60 120,35 140,35 140,60 200,60 200,35 260,35 260,60 300,60 300,35 330,35 330,60 400,60"/>
+            <polyline fill="none" stroke="#E8735F" stroke-width="3" points="0,62 40,62 40,87 90,87 90,62 120,62 120,87 140,87 140,62 200,62 200,87 260,87 260,62 300,62 300,87 330,87 330,62 400,62"/>
+          </svg>
+          <div class="card"><b>🔒 Live scope is members only</b><span>See the real CAN-H / CAN-L waveforms for every fault, probe at any module and view H−L differential.</span><span class="pill">Unlock with GCS</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="right">
+    <div class="panel"><div class="ptitle">Inject a fault <small>4 free · 9 more for members</small></div><div id="faults"></div></div>
+    <div class="panel" id="expPanel"><div class="ptitle" id="expTitle">Explain <small>(E to hide)</small></div><div id="explain"></div><div id="diag" class="hidden"></div></div>
+  </section>
+</main>
+<footer class="liteBar">
+  <span class="lt">Lite version</span><span style="color:var(--gold)">German Car Support</span>
+  <span class="sp"></span>
+  <span class="disc">Teaching values for typical high-speed CAN. Always learn the known-good numbers on the platform you're working on.</span>
+  <a class="pill" href="https://germancarsupport.com/support-plans" target="_top" data-top>See Support Plans</a>
+</footer>
+</div>
+
+<div id="gate" class="hidden" role="dialog" aria-modal="true" aria-labelledby="gateT"><div id="gateBox">
+  <div class="big">🔒</div>
+  <h2 id="gateT">Members only</h2>
+  <div class="feat" id="gateFeat"></div>
+  <p>This is part of the full GCS simulator: all 13 faults, the live scope view, module unplugging and the quiz. It's included with a GCS membership.</p>
+  <div class="acts">
+    <a class="pill" href="https://germancarsupport.com/support-plans" target="_top" data-top>See Support Plans</a>
+  </div>
+  <button id="gateClose">Keep exploring the lite version</button>
+</div></div>
+
+<script>
+"use strict";
+/* LITE BUILD: only the free faults' physics are included in this file. */
+const LOCS=[
+ {id:'GW', name:'Gateway', x:140, mod:true, term:true},
+ {id:'DLC',name:'Diag connector', x:405, mod:false},
+ {id:'BCM',name:'BCM', x:665, mod:true},
+ {id:'ECM',name:'ECM / DME', x:925, mod:true},
+ {id:'TCM',name:'TCM', x:1185, mod:true},
+ {id:'ABS',name:'ABS', x:1450, mod:true, term:true}];
+const YH=232, YL=286, YPIN=178, BAT_V=12.6;
+const OPEN_SEG=2, SHORT_SEG=3;
+/* full list for display; only entries with free:true have any simulation logic in this file */
+const FAULTS=[
+ {id:'normal',name:'Normal bus',free:true},
+ {id:'hgnd',name:'CAN-H shorted to ground',free:true},
+ {name:'CAN-L shorted to ground'},
+ {name:'CAN-H shorted to B+'},
+ {name:'CAN-L shorted to B+'},
+ {name:'CAN-H shorted to CAN-L'},
+ {id:'openH',name:'Open CAN-H (BCM ↔ ECM)',free:true},
+ {name:'Open CAN-L (BCM ↔ ECM)'},
+ {id:'term1',name:'One terminator missing',free:true},
+ {name:'Both terminators missing'},
+ {name:'Extra terminator (≈40 Ω)'},
+ {name:'Babbling module (stuck dominant)'},
+ {name:'Fails only under load'}];
+const FREE=FAULTS.filter(f=>f.free).map(f=>f.id);
+const EXPLAIN={
+ normal:{w:'Two 120 Ω terminators in parallel = 60 Ω. Recessive: both wires ≈2.5 V. Dominant: CAN-H ≈3.5 V, CAN-L ≈1.5 V (≈2 V difference).',
+   m:'Key on: H→GND ≈2.6–2.7 V, L→GND ≈2.3–2.4 V (typical, busy bus). Key off: H↔L ≈60 Ω.',
+   t:'Learn the known-good numbers on YOUR platform first – then everything else is a comparison.'},
+ hgnd:{w:'CAN-H is pulled to chassis ground, so the bus can never go dominant. All modules lose communication.',
+   m:'H→GND ≈0 V. L→GND near 0 V (pulled through the terminators). Key off: H→GND ≈0 Ω; H↔L still ≈60 Ω.',
+   t:'Key off, unplug modules / split connectors one at a time while watching H→GND Ω. When it jumps high, the short is on the side you just disconnected.'},
+ openH:{w:'CAN-H is broken between BCM and ECM. Each side keeps one terminator. The Gateway side still talks; modules past the break go missing.',
+   m:'Voltages look almost normal – on the far side CAN-H averages a little low. Key off: H↔L ≈120 Ω on BOTH sides. CAN-H at DLC → CAN-H at TCM ≈240 Ω (should be ≈0). Try it: move the leads.',
+   t:'The list of modules that are missing points to where the break is. Probe the same wire on both sides of a suspect connector.',
+   teach:true},
+ term1:{w:'One 120 Ω terminator is gone (open resistor, or its module/connector unplugged). The bus often still works on the bench but gets reflections and errors as load and length increase.',
+   m:'Voltages look normal. Key off: H↔L ≈120 Ω instead of 60 Ω.',
+   t:'60 Ω = both ends present. 120 Ω = one is missing. Find which end by unplugging the end modules one at a time.',
+   teach:true}
+};
+const MOD_IDX=[0,2,3,4,5];
+const S={myst:false, answered:false, pick:null, key:true, fault:'normal', mode:'V', red:'H1', black:'GND', active:'red', playing:true, speed:1, expl:true};
+
+/* ---------- physics (free faults only) ---------- */
+function terms(st){return st.fault==='term1'?[0]:[0,5];}
+function L4(hr,hd,lr,ld,d){return {hr,hd,lr,ld,d};}
+function levels(st,i){
+  if(!st.key)return L4(0,0,0,0,0);
+  const d=0.18;
+  if(st.fault==='hgnd')return L4(0,0,.08,.02,.3);
+  if(st.fault==='openH'&&i>OPEN_SEG)return L4(2.5,2.05,2.5,1.5,d);
+  const sw={1:1.15,2:1}[terms(st).length];
+  return L4(2.5,2.5+sw,2.5,2.5-sw,d);}
+function avgHL(st,i){const v=levels(st,i);return {h:v.hr*(1-v.d)+v.hd*v.d, l:v.lr*(1-v.d)+v.ld*v.d};}
+function nodeV(st,p){ if(p==='GND')return 0; if(p==='BAT')return BAT_V;
+  const i=+p.slice(1), a=avgHL(st,i); return p[0]==='H'?a.h:a.l;}
+function resistance(st,a,b){
+  const N=13, idx=p=>p==='GND'?12:(p[0]==='H'?0:6)+(+p.slice(1));
+  const E=[], add=(x,y,r)=>E.push([x,y,r]);
+  for(let k=0;k<5;k++){
+    if(!(st.fault==='openH'&&k===OPEN_SEG))add(k,k+1,.25);
+    add(6+k,7+k,.25);}
+  terms(st).forEach(i=>add(i,6+i,120));
+  MOD_IDX.forEach(i=>{add(i,12,48000);add(6+i,12,48000);});
+  if(st.fault==='hgnd')add(SHORT_SEG,12,.3);
+  const A=idx(a),B=idx(b); if(A===B)return 0;
+  const adj=[...Array(N)].map(()=>[]); E.forEach(([x,y])=>{adj[x].push(y);adj[y].push(x);});
+  const seen=new Set([A]),q=[A]; while(q.length){const n=q.pop();adj[n].forEach(m=>{if(!seen.has(m)){seen.add(m);q.push(m);}});}
+  if(!seen.has(B))return Infinity;
+  const nodes=[...seen].filter(n=>n!==B), pos=new Map(nodes.map((n,k)=>[n,k])), n=nodes.length;
+  const G=[...Array(n)].map(()=>new Float64Array(n+1));
+  E.forEach(([x,y,r])=>{const g=1/r;[[x,y],[y,x]].forEach(([u,v])=>{if(pos.has(u)){G[pos.get(u)][pos.get(u)]+=g;if(pos.has(v))G[pos.get(u)][pos.get(v)]-=g;}});});
+  G[pos.get(A)][n]=1;
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(G[r][c])>Math.abs(G[p][c]))p=r;[G[c],G[p]]=[G[p],G[c]];
+    for(let r=0;r<n;r++)if(r!==c){const f=G[r][c]/G[c][c];if(f)for(let k=c;k<=n;k++)G[r][k]-=f*G[c][k];}}
+  return G[pos.get(A)][n]/G[pos.get(A)][pos.get(A)];}
+function measure(st,red,black,mode){
+  if(mode==='R'){
+    if(st.key)return {txt:'--',warn:'Key ON: circuit is powered – Ω reading invalid. Turn key off and let the bus sleep.'};
+    if(red==='BAT'||black==='BAT')return {txt:'--',warn:'Never measure Ω on a live supply. Use V on B+.'};
+    const r=resistance(st,red,black);return {txt:fmtR(r),val:r};}
+  const v=nodeV(st,red)-nodeV(st,black);
+  let warn='';
+  if(!st.key&&(red!=='BAT'&&red!=='GND'||black!=='BAT'&&black!=='GND'))warn='Key OFF: bus is asleep – do voltage checks with the key ON.';
+  return {txt:fmtV(v),val:v,warn};}
+function fmtV(v){const r=Math.round(v*100)/100;return (r<0?'−':'')+Math.abs(r).toFixed(2)+' V';}
+function fmtR(r){if(!isFinite(r)||r>4e7)return 'OL';if(r<1000)return r.toFixed(1)+' Ω';if(r<1e6)return (r/1000).toFixed(1)+' kΩ';return (r/1e6).toFixed(2)+' MΩ';}
+function knownGood(st){return Object.assign({},st,{fault:'normal'});}
+function status(st,i){
+  if(i===1)return 'port';
+  if(!st.key)return 'sleep';
+  if(st.fault==='hgnd')return 'lost';
+  if(st.fault==='openH')return i>OPEN_SEG?'lost':'ok';
+  return 'ok';}
+
+/* ---------- members-only gate ---------- */
+const $=id=>document.getElementById(id);
+let gateReturn=null;
+function gate(feature){gateReturn=document.activeElement;$('gateFeat').textContent=feature||'Full simulator';$('gate').classList.remove('hidden');$('gateClose').focus();}
+function ungate(){$('gate').classList.add('hidden');if(gateReturn&&gateReturn.focus)gateReturn.focus();}
+$('gateClose').onclick=ungate;
+$('gate').addEventListener('click',e=>{if(e.target.id==='gate')ungate();});
+document.addEventListener('click',e=>{const l=e.target.closest('[data-lock]');if(l){e.preventDefault();gate(l.dataset.lock);}});
+$('scopeLock').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();gate($('scopeLock').dataset.lock);}});
+
+/* ---------- topology SVG ---------- */
+const svg=$('topo'), NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;(parent||svg).appendChild(e);return e;}
+const TP={};
+LOCS.forEach((L,i)=>{TP['H'+i]={x:L.x-32,y:YPIN,lab:L.id+' CAN-H'};TP['L'+i]={x:L.x+32,y:YPIN,lab:L.id+' CAN-L'};});
+TP.GND={x:250,y:440,lab:'Chassis ground'}; TP.BAT={x:560,y:440,lab:'Battery +'};
+const JACK={red:{x:1430,y:505},black:{x:1500,y:505}};
+let gStatic,gDyn,gPk,gLead;
+function buildTopo(){
+  svg.innerHTML='';
+  const defs=el('defs',{});
+  const f=el('filter',{id:'glow',x:'-50%',y:'-50%',width:'200%',height:'200%'},defs);el('feGaussianBlur',{stdDeviation:'4',result:'b'},f);
+  const m=el('feMerge',{},f);el('feMergeNode',{in:'b'},m);el('feMergeNode',{in:'SourceGraphic'},m);
+  gStatic=el('g',{});gDyn=el('g',{});gPk=el('g',{});gLead=el('g',{});
+  el('text',{x:20,y:YH+6,fill:'var(--canh)','font-size':20,'font-weight':800},gStatic,'H');
+  el('text',{x:20,y:YL+6,fill:'var(--canl)','font-size':20,'font-weight':800},gStatic,'L');
+  el('text',{x:800,y:350,fill:'#9AA9BC','font-size':17,'text-anchor':'middle'},gStatic,'twisted pair – high-speed CAN (ISO 11898-2)');
+  const g=TP.GND; el('line',{x1:g.x,y1:g.y,x2:g.x,y2:g.y+22,stroke:'#CFDCEF','stroke-width':4},gStatic);
+  [36,24,12].forEach((w,k)=>el('line',{x1:g.x-w/2,y1:g.y+22+k*8,x2:g.x+w/2,y2:g.y+22+k*8,stroke:'#CFDCEF','stroke-width':4},gStatic));
+  el('text',{x:g.x+34,y:g.y+30,fill:'#CFDCEF','font-size':19,'font-weight':700},gStatic,'Chassis GND');
+  const bt=TP.BAT; el('rect',{x:bt.x-10,y:bt.y+6,width:120,height:58,rx:8,fill:'#2b3546',stroke:'#A9BEDC','stroke-width':3},gStatic);
+  el('text',{x:bt.x+50,y:bt.y+44,fill:'#fff','font-size':20,'font-weight':800,'text-anchor':'middle'},gStatic,'12 V');
+  el('text',{x:bt.x+124,y:bt.y+30,fill:'#CFDCEF','font-size':19,'font-weight':700},gStatic,'Battery +');
+  el('rect',{x:1380,y:470,width:170,height:50,rx:10,fill:'#1d2532',stroke:'#6E85A8','stroke-width':2},gStatic);
+  el('text',{x:1465,y:466,fill:'#9AA9BC','font-size':15,'text-anchor':'middle'},gStatic,'to meter');
+  el('circle',{cx:JACK.red.x,cy:JACK.red.y,r:10,fill:'#E8735F'},gStatic);el('circle',{cx:JACK.black.x,cy:JACK.black.y,r:10,fill:'#111',stroke:'#ddd','stroke-width':2},gStatic);
+  svg.append(gStatic,gDyn,gPk,gLead);
+}
+function drawDyn(){
+  gDyn.innerHTML='';
+  const wire=(y,col,openSeg)=>{
+    for(let k=0;k<5;k++){const off=y===YH?-32:32, a=LOCS[k].x+off, b=LOCS[k+1].x+off;
+      if(openSeg===k){const mid=(a+b)/2;el('line',{x1:a,y1:y,x2:mid-20,y2:y,stroke:col,'stroke-width':7,'stroke-linecap':'round'},gDyn);el('line',{x1:mid+20,y1:y,x2:b,y2:y,stroke:col,'stroke-width':7,'stroke-linecap':'round'},gDyn);
+        el('text',{x:mid,y:y+8,fill:'#F2C66D','font-size':26,'font-weight':900,'text-anchor':'middle'},gDyn,'✕');}
+      else el('line',{x1:a,y1:y,x2:b,y2:y,stroke:col,'stroke-width':7,'stroke-linecap':'round'},gDyn);}
+  };
+  const rev=!S.myst||S.answered;
+  wire(YH,'#7FB5E6',S.fault==='openH'&&rev?OPEN_SEG:null);
+  wire(YL,'#E8735F',null);
+  LOCS.forEach(L=>{
+    el('line',{x1:L.x-32,y1:YPIN,x2:L.x-32,y2:YH,stroke:'#7FB5E6','stroke-width':5},gDyn);
+    el('path',{d:`M${L.x+32},${YPIN} V${YH-10} a10 10 0 0 1 0 20 V${YL}`,fill:'none',stroke:'#E8735F','stroke-width':5},gDyn);
+  });
+  if(S.fault==='hgnd'&&rev){const sx=(LOCS[SHORT_SEG].x+LOCS[SHORT_SEG+1].x)/2;
+    let d=`M${sx},${YH}`;for(let k=1;k<=6;k++)d+=` L${sx+(k%2?14:-14)},${YH+(405-YH)*k/6}`;
+    el('path',{d,fill:'none',stroke:'#F2C66D','stroke-width':5,filter:'url(#glow)'},gDyn);
+    el('text',{x:sx+24,y:(YH+405)/2+30,fill:'#F2C66D','font-size':18,'font-weight':800},gDyn,'short to GND');
+    [30,20,10].forEach((w,k)=>el('line',{x1:sx-w/2,y1:410+k*7,x2:sx+w/2,y2:410+k*7,stroke:'#CFDCEF','stroke-width':3},gDyn));}
+  const t=terms(S);
+  LOCS.forEach((L,i)=>{
+    const s=status(S,i);
+    if(L.mod){
+      const g=el('g',{class:'mod','data-lock':'Module unplug (isolation testing)',style:'cursor:pointer'},gDyn);
+      const col={ok:'#7BD389',lost:'#E8735F',sleep:'#9AA9BC'}[s];
+      el('rect',{x:L.x-100,y:22,width:200,height:118,rx:12,fill:'#4E6180',stroke:col,'stroke-width':5},g);
+      el('text',{x:L.x,y:62,fill:'#fff','font-size':L.name.length>10?21:26,'font-weight':800,'text-anchor':'middle'},g,L.name);
+      el('text',{x:L.x,y:94,fill:col,'font-size':18,'font-weight':900,'text-anchor':'middle'},g,{ok:'● TALKING',lost:'✕ LOST COMM',sleep:'asleep'}[s]);
+      if(L.term){const has=t.includes(i)||!rev;
+        el('text',{x:L.x,y:126,fill:has?'#CFDCEF':'#E8735F','font-size':16,'font-weight':700,'text-anchor':'middle','text-decoration':has?'':'line-through'},g,'120 Ω term.'+(has?'':' (missing)'));
+      } else el('text',{x:L.x,y:126,fill:'#9AA9BC','font-size':15,'text-anchor':'middle'},g,'🔒 unplug: members');
+    } else {
+      const g=el('g',{},gDyn);
+      el('path',{d:`M${L.x-95},40 h190 l-22,90 h-146 z`,fill:'#2f3d52',stroke:'#A9BEDC','stroke-width':4},g);
+      el('text',{x:L.x,y:80,fill:'#fff','font-size':24,'font-weight':800,'text-anchor':'middle'},g,'DLC');
+      el('text',{x:L.x,y:108,fill:'#A9BEDC','font-size':16,'text-anchor':'middle'},g,'diagnostic connector');
+    }
+  });
+  Object.entries(TP).forEach(([k,p])=>{
+    const sel=S.red===k||S.black===k;
+    el('circle',{cx:p.x,cy:p.y,r:13,fill:k[0]==='H'?'#7FB5E6':k[0]==='L'?'#E8735F':'#CFDCEF',stroke:sel?'#fff':'#1d2532','stroke-width':sel?4:3,class:'tp','data-tp':k,style:'cursor:crosshair'},gDyn);
+  });
+  drawLeads();
+}
+function leadPos(which){const p=S[which]; if(p&&TP[p])return TP[p]; return S['_'+which+'Free']||{x:JACK[which].x-40,y:JACK[which].y-60};}
+function drawLeads(){
+  gLead.innerHTML='';
+  ['black','red'].forEach(w=>{
+    const t=S.drag===w&&S.dragPos?S.dragPos:leadPos(w), j=JACK[w];
+    el('path',{d:`M${j.x},${j.y} C${j.x},${j.y-140} ${t.x},${t.y+170} ${t.x},${t.y+26}`,fill:'none',stroke:w==='red'?'#c0392b':'#0d0f12','stroke-width':6,'stroke-linecap':'round',opacity:.95},gLead);
+    const g=el('g',{class:'lead','data-w':w,style:'cursor:grab'},gLead);
+    el('rect',{x:t.x-8,y:t.y+10,width:16,height:44,rx:5,fill:w==='red'?'#c0392b':'#15181d',stroke:'#fff','stroke-width':2},g);
+    el('polygon',{points:`${t.x-4},${t.y+10} ${t.x+4},${t.y+10} ${t.x},${t.y-2}`,fill:'#ddd','pointer-events':'none'},g);
+    el('circle',{cx:t.x,cy:t.y+32,r:26,fill:'transparent'},g);
+  });
+}
+function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+svg.addEventListener('pointerdown',e=>{
+  const lead=e.target.closest('.lead'), tp=e.target.closest('.tp');
+  if(lead){S.drag=lead.dataset.w;S.dragPos=svgPt(e);svg.setPointerCapture(e.pointerId);e.preventDefault();drawLeads();return;}
+  if(tp){S[S.active]=tp.dataset.tp;S.active=S.active==='red'?'black':'red';syncUI();}
+});
+svg.addEventListener('pointermove',e=>{if(!S.drag)return;S.dragPos=svgPt(e);drawLeads();});
+svg.addEventListener('pointerup',e=>{if(!S.drag)return;const p=svgPt(e);let best=null,bd=55;
+  for(const k in TP){const d=Math.hypot(TP[k].x-p.x,TP[k].y-p.y);if(d<bd){bd=d;best=k;}}
+  if(best)S[S.drag]=best;else{S[S.drag]=null;S['_'+S.drag+'Free']={x:p.x,y:p.y};}
+  S.drag=null;S.dragPos=null;syncUI();});
+
+/* ---------- packets animation ---------- */
+let packets=[], lastSpawn=0;
+function spawn(){
+  if(!S.key)return;
+  const talkers=MOD_IDX.filter(i=>status(S,i)==='ok'), dead=MOD_IDX.filter(i=>status(S,i)==='lost');
+  if(talkers.length){const i=talkers[Math.floor(Math.random()*talkers.length)];[-1,1].forEach(dir=>packets.push({x:LOCS[i].x,dir,col:'#ffffff',life:1,src:i}));}
+  else if(dead.length){const i=dead[Math.floor(Math.random()*dead.length)];[-1,1].forEach(dir=>packets.push({x:LOCS[i].x,dir,col:'#E8735F',fizz:true,life:1,src:i}));}
+}
+function stepPackets(dt){
+  const v=650*dt;
+  packets.forEach(p=>{p.x+=p.dir*v;
+    if(p.fizz)p.life-=dt*2.2;
+    if(S.fault==='openH'){const mid=(LOCS[OPEN_SEG].x+LOCS[OPEN_SEG+1].x)/2;if((p.src<=OPEN_SEG&&p.x>mid)||(p.src>OPEN_SEG&&p.x<mid))p.life=0;}
+    if(p.x<LOCS[0].x-32||p.x>LOCS[5].x+32)p.life=0;});
+  packets=packets.filter(p=>p.life>0);
+  gPk.innerHTML='';
+  packets.forEach(p=>el('circle',{cx:p.x,cy:(YH+YL)/2,r:p.fizz?9:10,fill:p.col,opacity:Math.max(0,Math.min(1,p.life)),filter:'url(#glow)'},gPk));
+}
+
+/* ---------- UI ---------- */
+function buildFaults(){const f=$('faults');f.innerHTML='';
+  const hf=document.createElement('div');hf.className='fhead f';hf.textContent='Free in lite';
+  const hl=document.createElement('div');hl.className='fhead';hl.textContent='🔒 Members (full simulator)';
+  f.appendChild(hf);
+  FAULTS.forEach((F,n)=>{if(!F.free)return;const b=document.createElement('button');b.className='fbtn free';b.dataset.f=F.id;b.innerHTML=`<span class="n">${n+1}</span>${F.name}`;b.onclick=()=>setFault(F.id);f.appendChild(b);});
+  f.appendChild(hl);
+  FAULTS.forEach((F,n)=>{if(F.free)return;const b=document.createElement('button');b.className='fbtn lockd';b.dataset.lock='Fault '+(n+1)+': '+F.name;b.innerHTML=`<span class="n">${n+1}</span>${F.name}<span class="lk">🔒</span>`;f.appendChild(b);});}
+function setFault(id){if(!FREE.includes(id))return;S.myst=false;S.fault=id;packets=[];syncUI();}
+function newMystery(){let f;do{f=FREE[Math.floor(Math.random()*FREE.length)];}while(FREE.length>1&&S.myst&&f===S.fault);
+  S.myst=true;S.answered=false;S.pick=null;S.fault=f;packets=[];syncUI();}
+const DX={normal:'Bus is normal (no fault)',hgnd:'CAN-H shorted to ground',openH:'Open CAN-H between two modules',term1:'One terminator missing'};
+const WHY={normal:'Key off, H↔L ≈60 Ω (both 120 Ω terminators). Key on, H→GND ≈2.6–2.7 V and L→GND ≈2.3–2.4 V, and every module talks.',
+ hgnd:'Key on, H→GND reads ≈0 V and L→GND is near 0 V too, and every module lost comm. Key off, H→GND ≈0 Ω while H↔L still reads ≈60 Ω, so the terminators are fine.',
+ openH:'Modules past the break are missing, but voltages look almost normal. Key off, H↔L reads ≈120 Ω on both sides of the break, and CAN-H at the DLC to CAN-H at a module past the break reads ≈240 Ω instead of ≈0 Ω.',
+ term1:'Voltages look normal and every module talks, which is why this one hides. Key off, H↔L reads ≈120 Ω instead of 60 Ω. Unplug the end modules one at a time to find which end is missing.'};
+function renderDiag(){const d=$('diag');
+  let h=`<h3>Mystery car: what's wrong?</h3><p>Use the key switch, the meter and the module status to work it out, then pick your diagnosis.</p>`;
+  FREE.forEach(f=>{h+=`<label><input type="radio" name="dx" value="${f}" ${S.pick===f?'checked':''} ${S.answered?'disabled':''}> ${DX[f]}</label>`;});
+  h+=`<div class="acts"><button class="btn myst on" id="chk" ${S.answered?'disabled':''}>Check my diagnosis</button><button class="btn" id="nextCar">New mystery car</button></div>`;
+  if(S.answered){const ok=S.pick===S.fault;
+    h+=`<div class="res ${ok?'ok':'no'}"><b>${ok?'✔ Correct.':'✘ Not quite.'}</b> ${ok?'':'You picked “'+DX[S.pick]+'”. '}This car has: <b>${DX[S.fault]}</b>.<br>${WHY[S.fault]}</div>`;}
+  else if(S.pick===false)h+=`<div class="res no">Pick one diagnosis first.</div>`;
+  d.innerHTML=h;
+  d.querySelectorAll('input[name=dx]').forEach(r=>r.onchange=()=>{S.pick=r.value;});
+  $('chk').onclick=()=>{if(!S.pick){S.pick=false;renderDiag();return;}S.answered=true;syncUI();};
+  $('nextCar').onclick=newMystery;}
+function goTop(e){const a=e.target.closest('a[data-top]');if(!a)return;e.preventDefault();
+  try{window.top.location.href=a.href;}catch(err){window.open(a.href,'_blank','noopener');}}
+document.addEventListener('click',goTop);
+function syncUI(){
+  document.querySelectorAll('.fbtn.free').forEach(b=>b.classList.toggle('on',!S.myst&&b.dataset.f===S.fault));
+  $('mystBtn').classList.toggle('on',S.myst);
+  $('keyOn').classList.toggle('on',S.key);$('keyOff').classList.toggle('on',!S.key);
+  $('modeV').classList.toggle('on',S.mode==='V');$('modeR').classList.toggle('on',S.mode==='R');
+  $('actR').classList.toggle('on',S.active==='red');$('actK').classList.toggle('on',S.active==='black');
+  $('play').textContent=S.playing?'❚❚ Pause':'▶ Play';
+  $('expPanel').classList.toggle('hidden',!S.expl&&!S.myst);$('expBtn').classList.toggle('on',S.expl);
+  drawDyn();updateMeter();updateExplain();}
+function lab(p){return p?TP[p].lab:'(not connected)';}
+function updateMeter(){
+  $('leadTxt').innerHTML=`<b class="r">Red:</b> ${lab(S.red)} &nbsp; <b class="k">Black:</b> ${lab(S.black)}`;
+  if(!S.red||!S.black){$('mval').textContent='--';$('mkg').textContent='--';$('mwarn').textContent='Connect both leads to test points.';return;}
+  const m=measure(S,S.red,S.black,S.mode), k=measure(knownGood(S),S.red,S.black,S.mode);
+  let t=m.txt; if(m.val!=null&&S.mode==='V'&&S.key){t=fmtV(m.val+(Math.random()-.5)*.014);}
+  $('mval').textContent=t;$('mkg').textContent=k.txt;$('mwarn').textContent=m.warn||'';}
+function updateExplain(){
+  $('explain').classList.toggle('hidden',S.myst);$('diag').classList.toggle('hidden',!S.myst);
+  $('expTitle').innerHTML=S.myst?'Check my diagnosis':'Explain <small>(E to hide)</small>';
+  if(S.myst){renderDiag();return;}
+  const e=EXPLAIN[S.fault], F=FAULTS.find(f=>f.id===S.fault);
+  $('explain').innerHTML=`<h3>${F.name}</h3>
+   <span class="k">What's happening</span><p>${e.w}</p>
+   <span class="k">Meter (typical)</span><p>${e.m}</p>
+   <span class="k">Scope</span><p><a href="#" data-lock="Oscilloscope (probe any module, H−L diff)" style="color:var(--kick)">🔒 See the waveform in the full simulator</a></p>
+   <span class="k">Diagnostic tip</span><p class="tip">${e.t}</p>
+   ${e.teach?'<p class="teach">⚠ Every voltage reading can look healthy with this fault. Do the key-off Ω check and isolation tests.</p>':''}`;}
+$('keyOn').onclick=()=>{S.key=true;packets=[];syncUI();};
+$('keyOff').onclick=()=>{S.key=false;packets=[];syncUI();};
+$('modeV').onclick=()=>{S.mode='V';syncUI();};$('modeR').onclick=()=>{S.mode='R';syncUI();};
+$('actR').onclick=()=>{S.active='red';syncUI();};$('actK').onclick=()=>{S.active='black';syncUI();};
+$('mystBtn').onclick=newMystery;
+$('expBtn').onclick=()=>{S.expl=!S.expl;syncUI();};
+$('play').onclick=()=>{S.playing=!S.playing;syncUI();};
+$('speed').oninput=e=>{S.speed=+e.target.value;};
+const fIdx=()=>FREE.indexOf(S.fault);
+$('prev').onclick=()=>setFault(FREE[(fIdx()+FREE.length-1)%FREE.length]);
+$('next').onclick=()=>setFault(FREE[(fIdx()+1)%FREE.length]);
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const p=b.dataset.p;
+  if(p==='HG'){S.red='H1';S.black='GND';S.mode='V';} if(p==='LG'){S.red='L1';S.black='GND';S.mode='V';}
+  if(p==='HL'){S.red='H1';S.black='L1';S.mode='V';} if(p==='HLR'){S.red='H1';S.black='L1';S.mode='R';}
+  syncUI();});
+document.addEventListener('keydown',e=>{
+  if(!$('gate').classList.contains('hidden')){if(e.key==='Escape')ungate();return;}
+  if(e.target.tagName==='SELECT'||e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight')$('next').click();else if(e.key==='ArrowLeft')$('prev').click();
+  else if(e.key===' '&&e.target===document.body){e.preventDefault();$('play').click();}
+  else if(e.key==='k'||e.key==='K'){S.key=!S.key;packets=[];syncUI();}
+  else if(e.key==='e'||e.key==='E')$('expBtn').click();});
+
+/* ---------- main loop ---------- */
+buildTopo();buildFaults();syncUI();
+let last=performance.now(), meterT=0;
+function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(S.playing){const sdt=dt*S.speed;
+    lastSpawn+=sdt;if(lastSpawn>.45){lastSpawn=0;spawn();}
+    stepPackets(sdt);
+    meterT+=dt;if(meterT>.5){meterT=0;updateMeter();}}
+  requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
